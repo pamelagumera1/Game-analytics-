@@ -1,0 +1,68 @@
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates  # To control date formatting
+from matplotlib.ticker import FuncFormatter
+import seaborn as sns
+
+# Function to format the y-axis as currency without decimals
+def currency_format(x, _):
+    return f'${x:,.0f}'  # Formats as currency with no decimal places
+
+# Preparing the data for visualization by grouping ARPPU values by month and game
+revenue_df['Date'] = pd.to_datetime(revenue_df['Date'], errors='coerce')
+revenue_df['month_year'] = revenue_df['Date'].dt.to_period('M').dt.to_timestamp()
+arppu_data = revenue_df.groupby(['month_year', 'Game'])['ARPPU'].mean().reset_index()
+arppu_data = arppu_data.sort_values(by='month_year')
+
+# Set up the plot for ARPPU per month
+plt.figure(figsize=(14, 8))
+
+# Get the unique games in the dataset
+unique_games_arppu = arppu_data['Game'].unique()
+
+# Colors and markers for differentiation
+colors_arppu = plt.cm.get_cmap('tab20', len(unique_games_arppu))  # Using tab20 colormap
+markers = ['o', 's', 'D', '^', 'v', 'P', '*']  # Different markers for each game (expand as needed)
+
+# Plot ARPPU for each game with different colors and symbols
+for i, game in enumerate(unique_games_arppu):
+    # Filter data for the current game
+    game_arppu_data = arppu_data[arppu_data['Game'] == game]
+    
+    # Plotting the ARPPU data
+    plt.plot(game_arppu_data['month_year'], game_arppu_data['ARPPU'], 
+             label=game, 
+             marker=markers[i % len(markers)],  # Cycle through marker list
+             color=colors_arppu(i),  # Assign distinct color from tab20 colormap
+             alpha=0.8)
+
+# Set y-axis to start at 0
+plt.ylim(0)
+
+# Add titles and labels
+plt.title('ARPPU │ All data', font = 'bold',  fontsize=12, loc = 'left')
+plt.xlabel('', fontsize=14)
+plt.ylabel('', fontsize=14)
+
+# Set x-axis to display ticks every month
+plt.gca().xaxis.set_major_locator(mdates.MonthLocator())  # Set major ticks to every month
+plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))  # Format the ticks as 'Jan 2022', etc.
+
+# Set the x-axis limits to cover only 2021 to 2022
+plt.xlim(pd.Timestamp('2021-01-01'), pd.Timestamp('2022-12-31'))
+
+# Rotate x-axis labels for better readability
+plt.xticks(rotation=45)
+
+# Format the y-axis as currency without decimals
+plt.gca().yaxis.set_major_formatter(FuncFormatter(currency_format))
+
+# Display legend and make sure it fits on the figure
+plt.legend(title='Game', bbox_to_anchor=(1.05, 1), loc='upper left')  # Place legend outside the plot
+
+# Remove grid lines
+plt.grid(False)
+
+plt.tight_layout()
+
+# Show the plot
+plt.show()
